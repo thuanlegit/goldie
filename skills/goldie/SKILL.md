@@ -1,14 +1,14 @@
 ---
 name: goldie
 description: >-
-  Create App Store and Play Store screenshots and preview videos for an iOS
-  or Android app. goldie explores the app on a simulator or emulator, writes
-  argent flows, renders framed screenshots and a preview video, and opens a
-  local studio with the finished store page. Use this skill when the user
-  asks for store screenshots, store assets, a preview video, or mentions
-  goldie. Also use it to change assets goldie made before: new headlines, a
-  different background or bezel, or a new screenshot order. Run it from the
-  mobile app's repo.
+  Create App Store and Play Store screenshots, preview videos, and feature
+  graphics for an iOS or Android app. goldie explores the app on a simulator
+  or emulator, writes argent flows, renders framed screenshots, feature
+  graphics and preview videos, and opens a local studio with the finished
+  store page. Use this skill when the user asks for store screenshots, store
+  assets, a preview video, feature graphic, or mentions goldie. Also use it to
+  change assets goldie made before: new headlines, a different background or
+  bezel, or a new screenshot order. Run it from the mobile app's repo.
 ---
 
 # goldie: App Store assets for the app in this repo
@@ -63,14 +63,16 @@ package with an app target, an `ios/` directory) and an Android target (a
   whatever the user named; otherwise ask in chat and let the user pick one or
   both.
 
-The two options:
+The store options:
 
-- **Apple App Store (iPhone)**: framed iPhone screenshots and an app preview
-  video, captured on an iOS simulator.
-- **Google Play Store (Android)**: Play phone screenshots captured on an
-  Android emulator, plus a portrait preview video; the Play promo video is
-  a YouTube link, so the user posts the video there themselves.
-
+- **Apple App Store (iPhone)**: framed iPhone screenshots (1320x2868) and an
+  app preview video (886x1920), captured on an iOS simulator (`iphone-6.9`).
+- **Apple App Store (iPad)**: 11-inch iPad screenshots (1668x2420) and preview
+  video (1200x1600), captured on an iPad Pro 11-inch simulator (`ipad-11`).
+  Renders screen-only (bare capture with drop shadow). Shares the iOS `.app` build.
+- **Google Play Store (Android)**: Play phone screenshots (1080x1920) captured on
+  an Android emulator (`pixel-10-pro`), a 1024x500 feature graphic, plus a
+  portrait preview video for YouTube.
 Both can be selected; scenes and flows are shared across stores. The answer
 decides which device keys go in the config, which builds Step 1 must find
 (iOS simulator build, Android APK, or both), and whether the Google Play
@@ -251,6 +253,21 @@ Pixel 10 Pro bezel instead of the config's `frame` variant (iPhone art);
 portrait video for the user to post on YouTube themselves; no duration
 bounds apply to it.
 
+
+The Play Store feature graphic is the promotional banner (1024 x 500) shown on
+the listing. Add a `graphic` scene (`kind: "graphic"`) to `scenes[]`. It has
+no flow: it borrows a screenshot scene's capture (`scene`, default first) and
+composes copy on the left with the app's device on the right. `frame` (or `all`)
+renders it into `out/graphics/<locale>/`.
+
+## iPad
+
+The `ipad-11` device key renders 11-inch iPad screenshots (1668 x 2420) and
+previews (1200 x 1600) from the same scenes, captured on the iPad Pro 11-inch
+(M4) simulator with the same Release `.app` build as the iPhone. goldie
+bundles no iPad bezel art, so iPad tiles compose screen-only with a soft drop
+shadow, clipped to the screen's rounded corners. The studio provides an iPad
+tab to preview them alongside iPhone and Android.
 ## Iterating on an existing setup
 
 A follow-up prompt maps onto a small change in the config or a flow, then
@@ -272,6 +289,8 @@ the next prompt can build on it.
 | Show a different state on one screen | the scene's flow YAML | `capture`, `frame`, `manifest` |
 | Change the preview story or its pacing | preview `segments[]`, `holdSeconds`, flow `wait:` steps | `capture`, `preview`, `manifest` |
 | Another locale | `locales`, plus a `<locale>` key in every copy record | `capture`, `frame`, `preview`, `manifest` |
+| iPad screenshots and preview | Add `"ipad-11"` to `devices` | `capture`, `frame`, `preview`, `manifest` |
+| Play Store feature graphic | Add a `kind: "graphic"` scene to `scenes[]` | `frame`, `manifest` |
 
 `capture` replays every flow; to re-capture only what changed, keep the
 other scenes as they are and accept the extra minute, or delete only the

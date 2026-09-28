@@ -24,13 +24,16 @@ const config: GoldieConfig = {
   // their selectors match. The emulator must already be running.
   // android: { appPath: "/path/to/app-release.apk", applicationId: "com.example.app" },
 
-  devices: ["iphone-6.9"],       // keys from $GOLDIE/src/specs.ts; "pixel-10-pro" for Google Play
+  // Device keys from $GOLDIE/src/specs.ts:
+  // "iphone-6.9" for iPhone, "ipad-11" for 11-inch iPad, "pixel-10-pro" for Google Play.
+  devices: ["iphone-6.9", "ipad-11", "pixel-10-pro"],
   locales: ["en-US"],
   appearance: "light",           // simulator appearance for every capture
 
   // Bundled bezels: "17-pro-silver" | "17-pro-blue" | "17-pro-orange".
   // Pick the finish that contrasts with the background. iPhone art: the
-  // android device is framed with the bundled Pixel 10 Pro bezel instead.
+  // android device is framed with the bundled Pixel 10 Pro bezel, and the iPad
+  // renders screen-only with a soft drop shadow (no iPad bezel is bundled).
   frame: { variant: "17-pro-blue" },
 
   theme: {
@@ -81,6 +84,17 @@ const config: GoldieConfig = {
       // decorations: [...],    layers on this tile only
     },
     // ... 3 or 4 more screenshot scenes ...
+    // Play Store feature graphic (1024 x 500 promotional banner). Rendered by
+    // `frame` into out/graphics/<locale>/. No flow of its own: borrows a
+    // screenshot scene's capture ("scene", default first) for the device.
+    {
+      kind: "graphic",
+      id: "feature",
+      scene: "issues",
+      headline: { "en-US": "AppName" },
+      subhead: { "en-US": "Short tagline for the banner." },
+    },
+
 
     // Exactly one preview scene. Each segment is its own flow and clip; the
     // clips are joined as recorded (Apple allows no bezel or captions).
@@ -173,6 +187,9 @@ applies to every tile, `scenes[].decorations` to one; both stack.
 | 6.9" screenshots | 1320x2868 PNG, no alpha | `out/screenshots/iphone-6.9/<locale>/` |
 | 6.9" preview | 886x1920 H.264 30fps AAC, 15 to 30 s | `out/previews/iphone-6.9/<locale>/` |
 | Play phone screenshots | 1080x1920 PNG, no alpha | `out/screenshots/pixel-10-pro/<locale>/` |
+| 11" iPad screenshots | 1668x2420 PNG, no alpha | `out/screenshots/ipad-11/<locale>/` |
+| 11" iPad preview | 1200x1600 H.264 30fps AAC, 15 to 30 s | `out/previews/ipad-11/<locale>/` |
+| Play feature graphic | 1024x500 PNG, no alpha | `out/graphics/<locale>/` |
 
 `goldie verify` checks the finished files against these with `sips` and
 `ffprobe` and fails on any mismatch.
