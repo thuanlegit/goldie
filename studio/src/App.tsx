@@ -274,8 +274,8 @@ function Loaded({ manifest, saved }: { manifest: StoreManifest; saved: SavedDesi
 
       <div className="flex min-w-0 flex-1 flex-col">
         <main className="relative grid flex-1 place-items-center overflow-auto p-10">
-          {spec && captures ? (
-            <div className="w-full max-w-[1400px]">
+          <div className="w-full max-w-[1400px]">
+            {spec && captures ? (
               <Strip
                 design={design}
                 captures={captures}
@@ -298,17 +298,40 @@ function Loaded({ manifest, saved }: { manifest: StoreManifest; saved: SavedDesi
                 sceneLayouts={sceneLayouts}
                 onSceneLayout={setSceneLayout}
               />
-            </div>
-          ) : spec ? (
-            <EmptyState
-              icon={CameraIcon}
-              title={`No screenshots for the ${deviceLabel(spec)} yet`}
-              body={`Ask your coding agent to capture the ${deviceLabel(spec)}, or run:`}
-              command="goldie capture && goldie manifest"
-            />
-          ) : (
-            <EmptyState {...ENABLE_PLATFORM[platform]} />
-          )}
+            ) : (
+              <div className="grid place-items-center">
+                {spec ? (
+                  <EmptyState
+                    icon={CameraIcon}
+                    title={`No screenshots for the ${deviceLabel(spec)} yet`}
+                    body={`Ask your coding agent to capture the ${deviceLabel(spec)}, or run:`}
+                    command="goldie capture && goldie manifest"
+                  />
+                ) : (
+                  <EmptyState {...ENABLE_PLATFORM[platform]} />
+                )}
+              </div>
+            )}
+            {platform === "android" && (manifest.graphics[locale]?.length ?? 0) > 0 && (
+              <section className="mt-10">
+                <h2 className="mb-3 text-xs font-medium text-muted-foreground">
+                  Google Play feature graphic
+                </h2>
+                <div className="flex flex-col gap-6">
+                  {manifest.graphics[locale]!.map((g) => (
+                    <img
+                      key={g.id}
+                      src={g.url}
+                      width={g.width}
+                      height={g.height}
+                      alt={`Feature graphic ${g.id}`}
+                      className="w-full rounded-2xl ring-1 ring-black/10"
+                    />
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
         </main>
       </div>
 

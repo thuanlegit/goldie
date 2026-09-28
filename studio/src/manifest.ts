@@ -107,6 +107,11 @@ export type StoreManifest = {
   };
   devices: DeviceEntry[];
   locales: string[];
+  /** Play feature graphics per locale; rendered PNGs from out/graphics. */
+  graphics: Record<
+    string,
+    Array<{ id: string; url: string; width: number; height: number; bytes: number }>
+  >;
   design: Design;
 };
 
