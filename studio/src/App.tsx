@@ -1,4 +1,10 @@
-import { CameraIcon, type LucideIcon, SmartphoneIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  CameraIcon,
+  type LucideIcon,
+  SmartphoneIcon,
+  TabletIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { EmptyState } from "./components/EmptyState";
 import { Sidebar } from "./components/Sidebar";
@@ -20,7 +26,7 @@ import {
 /** Sentinel for the config's own layout sequence, which the studio can show but not edit. */
 export const CUSTOM_TEMPLATE = "__custom__";
 
-export type Platform = "ios" | "android";
+export type Platform = "ios" | "ipad" | "android";
 
 /**
  * Shown when a store's tab is selected but its device is not in the config.
@@ -36,6 +42,12 @@ const ENABLE_PLATFORM: Record<
     title: "No App Store screenshots yet",
     body: "Ask your coding agent to set them up:",
     command: "create App Store screenshots using goldie",
+  },
+  ipad: {
+    icon: TabletIcon,
+    title: "No iPad screenshots yet",
+    body: "Ask your coding agent to set them up:",
+    command: "create iPad screenshots using goldie",
   },
   android: {
     icon: SmartphoneIcon,
@@ -94,7 +106,7 @@ function Loaded({ manifest, saved }: { manifest: StoreManifest; saved: SavedDesi
   // platform is view state of its own: an unconfigured tab has no device key
   // to derive it from.
   const initialPlatform: Platform =
-    view.platform === "ios" || view.platform === "android"
+    view.platform === "ios" || view.platform === "ipad" || view.platform === "android"
       ? view.platform
       : (manifest.devices.find((d) => d.key === view.device)?.platform ??
         manifest.devices[0]?.platform ??
@@ -393,7 +405,7 @@ function fontFaces(fonts: BundledFont[]): string {
     .join("\n");
 }
 
-/** iOS devices are sizes ("iPhone 6.9"), so they carry an inch mark, as in the sidebar. */
+/** Apple devices are sizes ("6.9", iPad "11"), so they carry an inch mark, as in the sidebar. */
 function deviceLabel(d: DeviceEntry): string {
-  return d.platform === "ios" ? `${d.label}"` : d.label;
+  return d.platform === "android" ? d.label : `${d.label}"`;
 }

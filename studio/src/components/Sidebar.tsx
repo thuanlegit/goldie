@@ -24,9 +24,9 @@ import { DesignPanel } from "./DesignPanel";
 import { ExportPanel } from "./ExportPanel";
 
 /**
- * The device-type rows, in display order. An entry without a platform renders
- * disabled: iPad stays that way until goldie can capture iPads, which then
- * needs a platform of its own here and in the app's view state.
+ * The device-type rows, in display order. iPhone and iPad are separate App
+ * Store tabs, so the iPad is a platform of its own; a row without a platform
+ * renders disabled.
  */
 const DEVICE_TYPES: Array<{
   key: string;
@@ -35,7 +35,7 @@ const DEVICE_TYPES: Array<{
   platform?: Platform;
 }> = [
   { key: "iphone", icon: SmartphoneIcon, label: "iPhone", platform: "ios" },
-  { key: "ipad", icon: TabletIcon, label: "iPad" },
+  { key: "ipad", icon: TabletIcon, label: "iPad", platform: "ipad" },
   { key: "android", icon: PlayIcon, label: "Android", platform: "android" },
 ];
 
@@ -110,7 +110,7 @@ export function Sidebar({
         {/* Both stores always show, so an iOS-only setup still surfaces that
             Google Play screenshots exist (and vice versa). */}
         <RadioGroupPrimitive.Root
-          value={platform === "ios" ? "iphone" : "android"}
+          value={DEVICE_TYPES.find((t) => t.platform === platform)?.key ?? "iphone"}
           onValueChange={(key) => {
             const picked = DEVICE_TYPES.find((t) => t.key === key)?.platform;
             if (picked) onPlatform(picked);
@@ -150,7 +150,7 @@ export function Sidebar({
                   onChange={onDevice}
                   options={platformDevices.map((d) => [
                     d.key,
-                    d.platform === "ios" ? `${d.label}"` : d.label,
+                    d.platform === "android" ? d.label : `${d.label}"`,
                   ])}
                 />
               </Field>
@@ -171,6 +171,7 @@ export function Sidebar({
           deviceFrame={
             platform === "android" || Boolean(platformDevices.find((d) => d.key === device)?.frame)
           }
+          noBezel={Boolean(platformDevices.find((d) => d.key === device)?.screenGeom)}
           background={background}
           frame={frame}
           fontFamily={fontFamily}

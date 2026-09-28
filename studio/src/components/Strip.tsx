@@ -180,9 +180,13 @@ export function Strip({
   const totalSeconds = segments.reduce((s, c) => s + c.durationSeconds, 0);
 
   // A device with its own bezel art (android) ignores the frame picker: the
-  // picker's variants are iPhone art, with iPhone geometry.
-  const deviceFrameUrl = tileSpec.frame?.url ?? frameUrl;
-  const geom = tileSpec.frame?.geom;
+  // picker's variants are iPhone art, with iPhone geometry. A device with no
+  // bezel art at all (the iPad) composes screen-only, at its screen geometry,
+  // whatever the design picks.
+  const deviceScreenOnly = tileSpec.screenGeom !== undefined;
+  const screenOnlyHere = screenOnly || deviceScreenOnly;
+  const geom = tileSpec.frame?.geom ?? tileSpec.screenGeom;
+  const deviceFrameUrl = tileSpec.frame?.url ?? (deviceScreenOnly ? null : frameUrl);
 
   type Entry = {
     key: string;
@@ -208,7 +212,7 @@ export function Strip({
   if (segments.length > 0 && tileSpec.preview) {
     // The 15-30s window is Apple's upload rule; the android video goes to
     // YouTube, which has no duration bounds.
-    const outOfBounds = tileSpec.platform === "ios" && (totalSeconds < 15 || totalSeconds > 30);
+    const outOfBounds = tileSpec.platform !== "android" && (totalSeconds < 15 || totalSeconds > 30);
     entries.push({
       key: "preview",
       width: tileSpec.preview.width,
@@ -245,7 +249,7 @@ export function Strip({
             slice={slice}
             tile={tileSpec.screenshot}
             theme={theme}
-            screenOnly={screenOnly}
+            screenOnly={screenOnlyHere}
             background={background}
             frameUrl={deviceFrameUrl}
             geom={geom}
@@ -686,7 +690,8 @@ function ScreenshotScene({
   theme: Theme;
   screenOnly: boolean;
   background: string;
-  frameUrl: string;
+  /** The bezel art's url; null when the device composes screen-only. */
+  frameUrl: string | null;
   /** The bezel art's geometry; the iOS bundled art's when the device brings none. */
   geom: FrameGeometry | undefined;
   fontFamily: string;

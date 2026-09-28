@@ -130,6 +130,7 @@ const SYSTEM_FONT = '-apple-system, "SF Pro Display", system-ui, sans-serif';
 export function DesignPanel({
   design,
   deviceFrame,
+  noBezel,
   background,
   frame,
   fontFamily,
@@ -146,6 +147,8 @@ export function DesignPanel({
   design: Design;
   /** The shown device brings its own bezel art (android), so the frame picker does not apply. */
   deviceFrame: boolean;
+  /** The shown device has no bezel at all (iPad renders screen-only), so no frame controls apply. */
+  noBezel: boolean;
   background: string;
   frame: string;
   fontFamily: string;
@@ -244,31 +247,32 @@ export function DesignPanel({
           <Select value={layout} onChange={onLayout} options={layoutOptions(design.layouts)} />
         </Field>
       ) : null}
-
-      <Field label="Frame">
-        <Tabs
-          value={screenOnly ? "screen" : "bezel"}
-          onValueChange={(v) => onScreenOnly(v === "screen")}
-        >
-          <TabsList className="w-full">
-            <TabsTrigger value="bezel">Bezel</TabsTrigger>
-            <TabsTrigger value="screen">Screen only</TabsTrigger>
-          </TabsList>
-        </Tabs>
-        {showFrames ? (
-          <div className="mt-1 flex flex-col gap-1">
-            {frameChoices.map(([key, label]) => (
-              <FrameOption
-                key={key || "custom"}
-                label={label}
-                tint={FRAME_META[key]?.tint}
-                selected={frame === key}
-                onClick={() => onFrame(key)}
-              />
-            ))}
-          </div>
-        ) : null}
-      </Field>
+      {noBezel ? null : (
+        <Field label="Frame">
+          <Tabs
+            value={screenOnly ? "screen" : "bezel"}
+            onValueChange={(v) => onScreenOnly(v === "screen")}
+          >
+            <TabsList className="w-full">
+              <TabsTrigger value="bezel">Bezel</TabsTrigger>
+              <TabsTrigger value="screen">Screen only</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          {showFrames ? (
+            <div className="mt-1 flex flex-col gap-1">
+              {frameChoices.map(([key, label]) => (
+                <FrameOption
+                  key={key || "custom"}
+                  label={label}
+                  tint={FRAME_META[key]?.tint}
+                  selected={frame === key}
+                  onClick={() => onFrame(key)}
+                />
+              ))}
+            </div>
+          ) : null}
+        </Field>
+      )}
     </div>
   );
 }
