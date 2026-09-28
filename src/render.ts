@@ -12,7 +12,9 @@ import type { CaptureManifest } from "./capture.ts";
 import {
   type Decoration,
   deviceFrame,
+  isGraphic,
   isPreview,
+  isScreenshot,
   type LoadedConfig,
   resolvedScenes,
   type Theme,
@@ -20,8 +22,21 @@ import {
 import { execOrThrow } from "./exec.ts";
 import { registerFonts, withGlyphFallback } from "./fonts.ts";
 import { pngInfo } from "./image.ts";
-import { BADGE, type Composition, compose, SCREEN_SHADOW, TYPE } from "./layouts.ts";
-import { DEVICES, type DeviceKey, PREVIEW, SCREENSHOT_PIXEL_FORMAT } from "./specs.ts";
+import {
+  BADGE,
+  type Composition,
+  compose,
+  composeFeatureGraphic,
+  SCREEN_SHADOW,
+  TYPE,
+} from "./layouts.ts";
+import {
+  DEVICES,
+  type DeviceKey,
+  FEATURE_GRAPHIC,
+  PREVIEW,
+  SCREENSHOT_PIXEL_FORMAT,
+} from "./specs.ts";
 
 async function readManifest(cfg: LoadedConfig, deviceKey: DeviceKey): Promise<CaptureManifest> {
   const file = join(cfg.outDir, "raw", deviceKey, "manifest.json");
@@ -130,6 +145,79 @@ export async function renderScreenshots(cfg: LoadedConfig, deviceKey: DeviceKey,
 }
 
 /**
+ * Renders the config's graphic scenes as Play feature graphics (specs.ts
+ * FEATURE_GRAPHIC): copy in a left column, the app's device right of centre.
+ * A graphic has no flow of its own - it borrows a screenshot scene's raw
+ * capture, preferring the android device's when one is configured, since the
+ * banner goes on the Play listing. The device renders with that device's own
+ * bezel art (screen-only when it brings none, like the iPad).
+ */
+export async function renderFeatureGraphic(cfg: LoadedConfig, locale: string) {
+  const scenes = cfg.scenes.filter(isGraphic);
+  const deviceKey = cfg.devices.find((k) => DEVICES[k].platform === "android") ?? cfg.devices[0];
+  if (scenes.length === 0 || !deviceKey) return [];
+  const manifest = await readManifest(cfg, deviceKey);
+  const outDir = join(cfg.outDir, "graphics", locale);
+  await mkdir(outDir, { recursive: true });
+  // A copy edit keeps its file name; stale ones would otherwise ride along
+  // into the export zip, as with screenshots/.
+  for (const name of await readdir(outDir)) {
+    if (name.endsWith(".png")) await rm(join(outDir, name), { force: true });
+  }
+  const { image, geom } = deviceFrame(cfg, deviceKey);
+  const bezel = image ? await loadImage(image) : null;
+  registerFonts();
+  const tile = FEATURE_GRAPHIC;
+  const shots = cfg.scenes.filter(isScreenshot);
+  return Promise.all(
+    scenes.map(async (scene, i) => {
+      console.log(`  frame ${scene.id}`);
+      const source = shots.find((s) => s.id === (scene.scene ?? shots[0]?.id));
+      if (!source)
+        throw new Error(
+          `Graphic "${scene.id}" references scene "${scene.scene}", which is not a screenshot scene.`,
+        );
+      const shot = manifest.screenshots.find((s) => s.sceneId === source.id);
+      if (!shot)
+        throw new Error(`Scene "${source.id}" is in the config but not in the capture manifest.`);
+      const c = composeFeatureGraphic(tile, geom, { screenOnly: !image });
+      const canvas = createCanvas(tile.width, tile.height);
+      const ctx = canvas.getContext("2d");
+      const background = scene.background ?? cfg.theme.background;
+      const transparent = isTransparent(background);
+      if (!transparent) {
+        ctx.fillStyle = paint(ctx, background, tile.width, tile.height);
+        ctx.fillRect(0, 0, tile.width, tile.height);
+      }
+      if (c.copy) {
+        drawCopy(ctx, c.copy, { width: tile.width, height: tile.height }, cfg.theme, {
+          headline: pick(scene.headline, locale, scene.id, "headline"),
+          subhead: scene.subhead ? pick(scene.subhead, locale, scene.id, "subhead") : undefined,
+        });
+      }
+      await drawDecorations(
+        ctx,
+        cfg,
+        [...(cfg.theme.decorations ?? []), ...(scene.decorations ?? [])],
+        {
+          width: c.width,
+          height: c.height,
+          designWidth: tile.width,
+          copy: null,
+          devices: [c.device],
+        },
+        tile,
+        locale,
+        scene.id,
+      );
+      drawDevice(ctx, c.device, await loadImage(shot.file), bezel, { width: tile.width });
+      const name = `${String(i + 1).padStart(2, "0")}-${scene.id}.png`;
+      return writePng(canvas, outDir, name, transparent);
+    }),
+  );
+}
+
+/**
  * Writes the canvas as an opaque PNG. App Store rejects screenshots carrying
  * an alpha channel, and the canvas always encodes RGBA, so ffmpeg strips it
  * on the way out. A transparent background keeps the alpha channel: those
@@ -196,7 +284,12 @@ function drawCopy(
   const total =
     blocks.reduce((sum, b) => sum + b.lines.length * fontSize(b.font) * b.lineHeight, 0) +
     gap * (blocks.length - 1);
-  let y = copy.position === "top" ? copy.y : copy.y - total;
+  let y =
+    copy.position === "middle"
+      ? copy.y - total / 2
+      : copy.position === "top"
+        ? copy.y
+        : copy.y - total;
   for (const b of blocks) {
     y = drawLines(ctx, { ...b, x: copy.x, y, align: copy.align });
     y += gap;
@@ -643,6 +736,29 @@ export async function verify(
     }
   }
 
+  return ok;
+}
+
+/**
+ * The feature graphic is a Play listing asset, not tied to a device: checked
+ * once per locale against the banner rules (1024x500, no alpha - Play takes
+ * JPEG or 24-bit PNG).
+ */
+export async function verifyGraphics(cfg: LoadedConfig, locale: string): Promise<boolean> {
+  if (!cfg.scenes.some(isGraphic)) return true;
+  let ok = true;
+  const dir = join(cfg.outDir, "graphics", locale);
+  for (const file of await filesWithExt(dir, ".png")) {
+    const { width, height, hasAlpha: alpha } = await pngInfo(file);
+    const alphaOk = !alpha || isTransparent(cfg.theme.background);
+    const good = width === FEATURE_GRAPHIC.width && height === FEATURE_GRAPHIC.height && alphaOk;
+    ok &&= good;
+    console.log(
+      `  ${good ? "ok  " : "FAIL"} ${basename(file)}  ${width}x${height}` +
+        `${alpha ? (alphaOk ? "  transparent (not for upload)" : "  alpha channel present") : ""}` +
+        `${good ? "" : `  expected ${FEATURE_GRAPHIC.width}x${FEATURE_GRAPHIC.height}, no alpha`}`,
+    );
+  }
   return ok;
 }
 

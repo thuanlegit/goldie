@@ -24,7 +24,8 @@ export const LAYOUT_KEYS = [
 export type LayoutKey = (typeof LAYOUT_KEYS)[number];
 
 export type CopyAlign = "center" | "left";
-export type CopyPosition = "top" | "bottom" | "none";
+/** Where the copy block sits. "middle" is the feature graphic's centred banner block; compose() never produces it. */
+export type CopyPosition = "top" | "bottom" | "none" | "middle";
 
 export type LayoutSpec = {
   key: LayoutKey;
@@ -314,7 +315,7 @@ export type Composition = {
   /** Width the geometry was composed at; size type and shadows from this, not the tile. */
   designWidth: number;
   copy: {
-    position: "top" | "bottom";
+    position: CopyPosition;
     align: CopyAlign;
     /** Anchor x: the centre line when centred, the left edge when left aligned. */
     x: number;
@@ -449,6 +450,59 @@ export function compose(
   return { width: tileIn.width * spec.span, height, copy, devices, designWidth: tile.width };
 }
 
+/**
+ * Pixel geometry for the feature graphic banner (specs.ts FEATURE_GRAPHIC):
+ * copy in a left column, vertically centred; the device right of centre, a
+ * shade taller than the banner so it bleeds off the top and bottom edges the
+ * way listing banners do. compose() does not apply: its fractions were tuned
+ * on a 0.46-aspect portrait tile, this banner is 2.05 wide.
+ */
+export type GraphicComposition = {
+  width: number;
+  height: number;
+  copy: Composition["copy"];
+  device: Composition["devices"][number];
+};
+
+export function composeFeatureGraphic(
+  tile: { width: number; height: number },
+  geom: FrameGeometry,
+  opts: { screenOnly?: boolean } = {},
+): GraphicComposition {
+  const art = opts.screenOnly
+    ? { width: geom.screen.width, height: geom.screen.height, screen: { x: 0, y: 0 } }
+    : { width: geom.width, height: geom.height, screen: geom.screen };
+  const scale = (tile.height * 1.16) / art.height;
+  const width = art.width * scale;
+  const height = art.height * scale;
+  const left = tile.width * 0.76 - width / 2;
+  const top = (tile.height - height) / 2;
+  const copyWidth = tile.width * 0.42;
+  return {
+    width: tile.width,
+    height: tile.height,
+    copy: {
+      position: "middle",
+      align: "left",
+      x: tile.width * 0.07,
+      y: tile.height / 2,
+      maxWidth: copyWidth,
+      box: { left: tile.width * 0.07, top: 0, width: copyWidth, height: tile.height },
+    },
+    device: {
+      frame: { left, top, width, height },
+      screen: {
+        left: left + art.screen.x * scale,
+        top: top + art.screen.y * scale,
+        width: geom.screen.width * scale,
+        height: geom.screen.height * scale,
+        radius: geom.screenRadius * scale,
+      },
+      rotate: 0,
+      capture: "primary",
+    },
+  };
+}
 /** Whether a layout draws a second capture, which needs the scene's `secondScene`. */
 export function needsSecondCapture(spec: LayoutSpec): boolean {
   return spec.devices.some((d) => d.capture === "secondary");

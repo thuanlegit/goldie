@@ -4,11 +4,10 @@
  *   screenshot-specifications | app-preview-specifications. Verified 2026-08-24
  *   (iPhone), 2026-09-28 (iPad: 1668x2420 screenshots from the 11" display
  *   table; 1200x1600 is the portrait resolution Apple accepts for iPad previews).
- * Android: Play Console help, "Add preview assets". Phone screenshots are
- *   PNG/JPEG, 16:9 or 9:16, each side 320-3840px for promotional eligibility.
  *   Play accepts no video uploads: the promo video is a YouTube link, so the
  *   android preview renders at a YouTube-friendly size for the user to post
- *   themselves, with no store constraints enforced.
+ *   themselves, with no store constraints enforced. The feature graphic is
+ *   PNG or JPEG, 1024x500, 24-bit (no alpha). Verified 2026-09-28.
  */
 
 export type DeviceKey = "iphone-6.9" | "ipad-11" | "pixel-10-pro";
@@ -82,6 +81,13 @@ export const DEVICES: Record<DeviceKey, DeviceSpec> = {
     preview: { width: 1080, height: 2400 },
   },
 };
+
+/**
+ * The Play Store feature graphic: one promotional banner per listing, shown
+ * across the store page and in Play's featuring surfaces. Not a per-device
+ * asset: a listing has one, whatever devices feed its screenshots.
+ */
+export const FEATURE_GRAPHIC = { width: 1024, height: 500 } as const;
 
 /**
  * Preview constraints Apple enforces at upload time. Both platforms encode

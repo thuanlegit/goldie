@@ -17,6 +17,7 @@ import {
   deviceFrame,
   FRAME_VARIANTS,
   framePath,
+  isGraphic,
   isPreview,
   isScreenshot,
   type LoadedConfig,
@@ -75,6 +76,14 @@ export type StoreManifest = {
   locales: string[];
   /** Keyed by device key, then locale. */
   assets: Record<string, Record<string, LocaleAssets>>;
+  /**
+   * Play feature graphics, keyed by locale - a listing asset, not a
+   * per-device one.
+   */
+  graphics: Record<
+    string,
+    Array<{ id: string; url: string; width: number; height: number; bytes: number }>
+  >;
   /** Everything the studio needs to composite scenes in the browser. */
   design: {
     theme: Theme;
@@ -146,9 +155,7 @@ export const WEB_DIR = "web";
 export async function writeManifest(cfg: LoadedConfig): Promise<string> {
   const webDir = join(cfg.outDir, WEB_DIR);
   await mkdir(webDir, { recursive: true });
-  await link(join(cfg.outDir, "screenshots"), join(webDir, "screenshots"));
-  await link(join(cfg.outDir, "previews"), join(webDir, "previews"));
-  await link(join(cfg.outDir, "raw"), join(webDir, "raw"));
+  await link(join(cfg.outDir, "graphics"), join(webDir, "graphics"));
 
   // Bezel art the browser composites with; every bundled variant so switching
   // frames never waits on a server.
@@ -217,6 +224,9 @@ export async function writeManifest(cfg: LoadedConfig): Promise<string> {
     }
   }
 
+  const graphics: StoreManifest["graphics"] = {};
+  for (const locale of cfg.locales) graphics[locale] = await collectGraphics(cfg, locale);
+
   const captures: StoreManifest["design"]["captures"] = {};
   for (const deviceKey of cfg.devices) {
     const raw = await readCaptureManifest(cfg, deviceKey);
@@ -255,6 +265,7 @@ export async function writeManifest(cfg: LoadedConfig): Promise<string> {
     }),
     locales: cfg.locales,
     assets,
+    graphics,
     design: {
       theme: cfg.theme,
       frameVariant: "variant" in cfg.frame ? cfg.frame.variant : null,
@@ -340,6 +351,28 @@ async function collect(
   return { screenshots, preview };
 }
 
+/** Feature graphic files for a locale, mirroring collect()'s screenshot entries. */
+async function collectGraphics(
+  cfg: LoadedConfig,
+  locale: string,
+): Promise<StoreManifest["graphics"][string]> {
+  const dir = join(cfg.outDir, "graphics", locale);
+  const order = cfg.scenes.filter(isGraphic).map((s) => s.id);
+  const graphics: StoreManifest["graphics"][string] = [];
+  // Files are named "<index>-<sceneId>.png".
+  for (const name of (await ls(dir)).filter((f) => f.endsWith(".png")).sort()) {
+    const file = join(dir, name);
+    const { width, height } = await imageSize(file);
+    graphics.push({
+      id: order.find((id) => name.includes(id)) ?? basename(name, ".png"),
+      url: `graphics/${locale}/${name}`,
+      width,
+      height,
+      bytes: (await stat(file)).size,
+    });
+  }
+  return graphics;
+}
 const ls = async (dir: string) => readdir(dir).catch(() => [] as string[]);
 
 /**

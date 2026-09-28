@@ -15,7 +15,13 @@ import { doctor } from "./doctor.ts";
 import { FONT_KEYS, fontStack } from "./fonts.ts";
 import { LAYOUT_KEYS, type LayoutKey, TEMPLATE_KEYS } from "./layouts.ts";
 import { writeManifest } from "./manifest.ts";
-import { renderPreview, renderScreenshots, verify } from "./render.ts";
+import {
+  renderFeatureGraphic,
+  renderPreview,
+  renderScreenshots,
+  verify,
+  verifyGraphics,
+} from "./render.ts";
 import { FlowFailure, repairBrief } from "./repair.ts";
 import type { DeviceKey } from "./specs.ts";
 import { openInBrowser, serveStudio, studioPaths } from "./studio-server.ts";
@@ -25,7 +31,7 @@ goldie - App Store screenshots and previews, driven by argent
 
   goldie doctor     Check the toolchain, simulators, flags and flows
   goldie capture    Replay every scene flow and save raw captures
-  goldie frame      Composite raw screenshots into framed, captioned PNGs
+  goldie frame      Composite raw screenshots into framed PNGs, plus the Play feature graphic
   goldie preview    Join the raw clips into the preview video (App Store upload; YouTube for Play)
   goldie verify     Check finished assets against the store spec tables
   goldie manifest   Write out/store.json for the studio app
@@ -91,6 +97,7 @@ async function main() {
 
     case "frame":
       for (const d of devices) for (const l of locales) await renderScreenshots(cfg, d, l);
+      for (const l of locales) await renderFeatureGraphic(cfg, l);
       return 0;
 
     case "preview":
@@ -127,6 +134,7 @@ async function main() {
           await renderPreview(cfg, d, l);
         }
       }
+      for (const l of locales) await renderFeatureGraphic(cfg, l);
       await writeManifest(cfg);
       console.log("\nverify");
       return (await verifyAll(cfg, devices, locales)) ? 0 : 1;
@@ -160,6 +168,7 @@ async function runCapture(cfg: LoadedConfig, devices: DeviceKey[]) {
 async function verifyAll(cfg: LoadedConfig, devices: DeviceKey[], locales: string[]) {
   let ok = true;
   for (const d of devices) for (const l of locales) ok = (await verify(cfg, d, l)) && ok;
+  for (const l of locales) ok = (await verifyGraphics(cfg, l)) && ok;
   return ok;
 }
 

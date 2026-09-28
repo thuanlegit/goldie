@@ -89,6 +89,18 @@ const config: GoldieConfig = {
       // decorations: [{ kind: "image", src: "art/sticker.png", x: 0.7, y: 0.1, width: 0.25 }],
     },
 
+    // The Play Store feature graphic (1024 x 500), rendered by `frame` and
+    // `all` into out/graphics/<locale>/. No flow of its own: it borrows a
+    // screenshot scene's capture ("scene", default the first) for the device
+    // shown on the right of the copy.
+    {
+      kind: "graphic",
+      id: "feature",
+      scene: "home",
+      headline: { "en-US": "AppName" },
+      subhead: { "en-US": "Short tagline for the banner." },
+    },
+
     // One preview scene. Each segment is its own flow and clip; the clips are
     // joined as recorded, since Apple requires a plain screen recording (no
     // bezel or captions). Total video length must land between 15 and 30

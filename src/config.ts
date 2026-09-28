@@ -91,7 +91,27 @@ export type PreviewScene = {
   audio?: string;
 };
 
-export type Scene = ScreenshotScene | PreviewScene;
+/**
+ * The Play Store feature graphic: a 1024x500 banner for the listing. No flow
+ * of its own - it borrows a screenshot scene's capture (the first by
+ * default) and composes the copy on the left with the app's device on the
+ * right, at src/layouts.ts's banner geometry.
+ */
+export type GraphicScene = {
+  kind: "graphic";
+  id: string;
+  /** Id of the screenshot scene whose capture fills the device. Default: the first screenshot scene. */
+  scene?: string;
+  /** Headline per locale. */
+  headline: Record<Locale, string>;
+  subhead?: Record<Locale, string>;
+  /** Overrides the theme background for this scene. */
+  background?: string;
+  /** Badge and image layers drawn over the background, in addition to theme.decorations. */
+  decorations?: Decoration[];
+};
+
+export type Scene = ScreenshotScene | PreviewScene | GraphicScene;
 
 export type Theme = {
   background: string;
@@ -485,3 +505,4 @@ export function flowPath(cfg: LoadedConfig, flow: string): string {
 
 export const isPreview = (s: Scene): s is PreviewScene => s.kind === "preview";
 export const isScreenshot = (s: Scene): s is ScreenshotScene => s.kind === "screenshot";
+export const isGraphic = (s: Scene): s is GraphicScene => s.kind === "graphic";

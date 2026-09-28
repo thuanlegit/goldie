@@ -61,11 +61,11 @@ goldie all        Capture, frame, render the preview and verify
 goldie studio     Preview and tweak the assets in the browser
 ```
 
-The output goes to `out/screenshots/<device>/<locale>/` and
-`out/previews/<device>/<locale>/`. The iPhone gets 1320 x 2868 screenshots
-and an 886 x 1920 H.264 preview. The iPad gets 1668 x 2420 screenshots and a
-1200 x 1600 preview. Google Play gets 1080 x 1920 screenshots.
-A preview must run 15 to 30 seconds.
+The output goes to `out/screenshots/<device>/<locale>/`,
+`out/previews/<device>/<locale>/` and `out/graphics/<locale>/`. The iPhone
+gets 1320 x 2868 screenshots and an 886 x 1920 H.264 preview. The iPad gets
+1668 x 2420 screenshots and a 1200 x 1600 preview. Google Play gets
+1080 x 1920 screenshots. A preview must run 15 to 30 seconds.
 
 ## Google Play
 
@@ -94,6 +94,13 @@ link, so `preview` and `all` record the preview scene on the emulator and
 render a portrait video for you to post on YouTube yourself. Apple's 15-30
 second window does not apply to it.
 
+The feature graphic is the listing's promotional banner. Add a `graphic`
+scene to the config and `frame` (or `all`) renders it at 1024 x 500, Play
+Console's required size, into `out/graphics/<locale>/`. It has no flow of
+its own: it borrows a screenshot scene's capture (the first by default,
+`scene` to choose another) and composes the copy on the left with the app's
+device on the right, using the device's own bezel art.
+
 ## iPad
 
 The `ipad-11` device key renders 11-inch iPad screenshots (1668 x 2420) from
@@ -109,7 +116,8 @@ https://github.com/user-attachments/assets/d6171a90-8fc1-437b-a574-5a8547068a3c
 
 The studio switches devices, backgrounds, templates, bezel, fonts and
 per-tile copy. It saves the choices to `goldie.design.json`, so the CLI
-renders the same result. The config also takes:
+renders the same result, and shows the feature graphic under the Play tab's
+tiles. The config also takes:
 
 - `frame`: `17-pro-blue`, `17-pro-silver`, `17-pro-orange`, or a custom
   bezel image; `theme.screenOnly: true` removes it.

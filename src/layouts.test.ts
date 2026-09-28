@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { compose, LAYOUT_KEYS, LAYOUTS, needsSecondCapture, resolveScenes } from "./layouts.ts";
+import { ANDROID_FRAME, FRAME } from "./frame.ts";
+import {
+  compose,
+  composeFeatureGraphic,
+  LAYOUT_KEYS,
+  LAYOUTS,
+  needsSecondCapture,
+  resolveScenes,
+} from "./layouts.ts";
 
 const tile = { width: 1320, height: 2868 };
 const theme = { copyHeightRatio: 0.24, deviceWidthRatio: 0.84 };
@@ -118,5 +126,31 @@ describe("resolveScenes", () => {
     });
     expect(r.map((x) => x.secondScene)).toEqual(["b", "a", "a"]);
     expect(resolveScenes([{ id: "only" }], { template: ["duo"] })[0]!.secondScene).toBeUndefined();
+  });
+});
+
+describe("composeFeatureGraphic", () => {
+  test("banner geometry: copy left, device right of center, device taller than tile", () => {
+    const banner = { width: 1024, height: 500 };
+    const c = composeFeatureGraphic(banner, ANDROID_FRAME.geom);
+    expect(c.width).toBe(1024);
+    expect(c.height).toBe(500);
+    expect(c.copy?.position).toBe("middle");
+    expect(c.copy?.align).toBe("left");
+    expect(c.copy?.box.left).toBeCloseTo(banner.width * 0.07, 1);
+    const deviceCenterX = c.device.frame.left + c.device.frame.width / 2;
+    expect(deviceCenterX).toBeCloseTo(banner.width * 0.76, 1);
+    expect(c.device.frame.height).toBeGreaterThan(banner.height);
+    expect(c.device.frame.top).toBeLessThan(0);
+    expect(c.device.frame.top + c.device.frame.height).toBeGreaterThan(banner.height);
+  });
+
+  test("screenOnly drops bezel margins so frame equals screen", () => {
+    const banner = { width: 1024, height: 500 };
+    const c = composeFeatureGraphic(banner, FRAME, { screenOnly: true });
+    expect(c.device.frame.left).toBe(c.device.screen.left);
+    expect(c.device.frame.top).toBe(c.device.screen.top);
+    expect(c.device.frame.width).toBe(c.device.screen.width);
+    expect(c.device.frame.height).toBe(c.device.screen.height);
   });
 });

@@ -167,7 +167,13 @@ export async function doctor(cfg: LoadedConfig): Promise<boolean> {
   });
 
   for (const scene of cfg.scenes) {
-    const flows = scene.kind === "preview" ? scene.segments.map((s) => s.flow) : [scene.flow];
+    // Graphic scenes have no flow: they borrow a screenshot scene's capture.
+    const flows =
+      scene.kind === "preview"
+        ? scene.segments.map((s) => s.flow)
+        : scene.kind === "screenshot"
+          ? [scene.flow]
+          : [];
     for (const f of flows) {
       const path = flowPath(cfg, f);
       checks.push({
