@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { ANDROID_FRAME, FRAME } from "./frame.ts";
+import { ANDROID_FRAME, FRAME, IPAD_SCREEN } from "./frame.ts";
 import {
   type FrameGeometry,
   isLayoutKey,
@@ -455,13 +455,15 @@ export function framePath(cfg: LoadedConfig): string {
 /**
  * Bezel art a device renders with: the config's `frame` on iOS, and on
  * android the bundled Pixel 10 Pro art unless the config supplies its own
- * `android.frame`. The geometry travels with the image, since the android art
- * has a different image box and cutout than the iOS variants.
+ * `android.frame`. The iPad has no bundled bezel (the config's frame is
+ * iPhone art), so it brings only the bare-screen geometry and a null image;
+ * the renderer composes it screen-only whatever the design picks.
  */
 export function deviceFrame(
   cfg: LoadedConfig,
   deviceKey: DeviceKey,
-): { image: string; geom: FrameGeometry } {
+): { image: string | null; geom: FrameGeometry } {
+  if (DEVICES[deviceKey].platform === "ipad") return { image: null, geom: IPAD_SCREEN };
   if (DEVICES[deviceKey].platform !== "android") return { image: framePath(cfg), geom: FRAME };
   const custom = cfg.android?.frame;
   if (custom) {

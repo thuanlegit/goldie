@@ -28,12 +28,15 @@ const config: GoldieConfig = {
   //   applicationId: "com.example.app",
   // },
 
-  devices: ["iphone-6.9", "pixel-10-pro"], // keys from src/specs.ts
+  // "ipad-11" renders 11-inch iPad screenshots from the same scenes and .app;
+  // add it for an iPad run (the studio gets an iPad tab).
+  devices: ["iphone-6.9", "ipad-11", "pixel-10-pro"], // keys from src/specs.ts
   locales: ["en-US"],
   appearance: "light",
 
   // Bundled bezel art for the screenshots: "17-pro-silver" | "17-pro-blue" | "17-pro-orange".
-  // iPhone art; the android device is framed with the bundled Pixel 10 Pro bezel.
+  // iPhone art; the android device is framed with the bundled Pixel 10 Pro bezel,
+  // and the iPad renders screen-only (no iPad bezel is bundled).
   // Custom art instead: frame: { image: "path/to/bezel.png" } (re-measure src/frame.ts).
   frame: { variant: "17-pro-blue" },
 

@@ -22,8 +22,9 @@ async function onPath(bin: string, args: string[] = ["--version"]): Promise<bool
 export async function doctor(cfg: LoadedConfig): Promise<boolean> {
   const checks: Check[] = [];
   const platforms = new Set(cfg.devices.map((key) => DEVICES[key].platform));
-
-  if (platforms.has("ios")) {
+  // The iPad runs in an iOS simulator too, so it needs the whole iOS toolchain.
+  const ios = platforms.has("ios") || platforms.has("ipad");
+  if (ios) {
     // iOS simulators exist only on macOS; say so before xcrun reports missing.
     const mac = process.platform === "darwin";
     checks.push({
@@ -84,7 +85,7 @@ export async function doctor(cfg: LoadedConfig): Promise<boolean> {
     fix: "unset ARGENT_SCREENSHOT_SCALE",
   });
 
-  if (platforms.has("ios")) {
+  if (ios) {
     const appPath = resolve(cfg.root, cfg.appPath);
     checks.push({
       name: "app build",

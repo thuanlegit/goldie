@@ -56,7 +56,7 @@ export type StoreManifest = {
   devices: Array<{
     key: DeviceKey;
     label: string;
-    platform: "ios" | "android";
+    platform: "ios" | "ipad" | "android";
     simulatorName: string | null;
     screenshot: { width: number; height: number };
     preview: { width: number; height: number } | null;
@@ -66,6 +66,11 @@ export type StoreManifest = {
      * the design picks.
      */
     frame: { url: string; geom: FrameGeometry } | null;
+    /**
+     * Present on devices with no bezel art (the iPad): they compose
+     * screen-only, at this bare-screen geometry.
+     */
+    screenGeom?: FrameGeometry;
   }>;
   locales: string[];
   /** Keyed by device key, then locale. */
@@ -161,6 +166,7 @@ export async function writeManifest(cfg: LoadedConfig): Promise<string> {
   for (const key of cfg.devices) {
     if (DEVICES[key].platform !== "android") continue;
     const { image, geom } = deviceFrame(cfg, key);
+    if (!image) continue;
     const url = `frames/${key}${extname(image)}`;
     await copyFile(image, join(webDir, url));
     deviceFrames[key] = { url, geom };
@@ -234,15 +240,19 @@ export async function writeManifest(cfg: LoadedConfig): Promise<string> {
   const manifest: StoreManifest = {
     generatedAt: new Date().toISOString(),
     app: { ...cfg.store },
-    devices: cfg.devices.map((key) => ({
-      key,
-      label: DEVICES[key].label,
-      platform: DEVICES[key].platform,
-      simulatorName: DEVICES[key].simulatorName ?? null,
-      screenshot: DEVICES[key].screenshot,
-      preview: DEVICES[key].preview,
-      frame: deviceFrames[key] ?? null,
-    })),
+    devices: cfg.devices.map((key) => {
+      const { image, geom } = deviceFrame(cfg, key);
+      return {
+        key,
+        label: DEVICES[key].label,
+        platform: DEVICES[key].platform,
+        simulatorName: DEVICES[key].simulatorName ?? null,
+        screenshot: DEVICES[key].screenshot,
+        preview: DEVICES[key].preview,
+        frame: deviceFrames[key] ?? null,
+        ...(image ? {} : { screenGeom: geom }),
+      };
+    }),
     locales: cfg.locales,
     assets,
     design: {

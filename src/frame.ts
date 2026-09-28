@@ -34,3 +34,16 @@ export const ANDROID_FRAME = {
     screenRadius: 178,
   },
 } as const;
+
+/**
+ * The iPad's bare-screen geometry, in native capture pixels: goldie bundles
+ * no iPad bezel art, so iPad captures compose screen-only (specs.ts), clipped
+ * to the screen's corner radius. The box is the capture itself; the radius is
+ * ~44pt at the iPad Pro's 2x scale, Apple publishes no exact figure.
+ */
+export const IPAD_SCREEN = {
+  width: 1668,
+  height: 2420,
+  screen: { x: 0, y: 0, width: 1668, height: 2420 },
+  screenRadius: 88,
+} as const;

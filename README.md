@@ -63,7 +63,8 @@ goldie studio     Preview and tweak the assets in the browser
 
 The output goes to `out/screenshots/<device>/<locale>/` and
 `out/previews/<device>/<locale>/`. The iPhone gets 1320 x 2868 screenshots
-and an 886 x 1920 H.264 preview. Google Play gets 1080 x 1920 screenshots.
+and an 886 x 1920 H.264 preview. The iPad gets 1668 x 2420 screenshots and a
+1200 x 1600 preview. Google Play gets 1080 x 1920 screenshots.
 A preview must run 15 to 30 seconds.
 
 ## Google Play
@@ -92,6 +93,15 @@ in your own art and its geometry. The Play Store promo video is a YouTube
 link, so `preview` and `all` record the preview scene on the emulator and
 render a portrait video for you to post on YouTube yourself. Apple's 15-30
 second window does not apply to it.
+
+## iPad
+
+The `ipad-11` device key renders 11-inch iPad screenshots (1668 x 2420) from
+the same scenes, captured on the iPad Pro 11-inch (M4) simulator with the same
+`.app` build as the iPhone. Add the key to `devices`. goldie bundles no iPad
+bezel, so iPad tiles compose screen-only: the bare capture with a drop shadow,
+clipped to the screen's rounded corners. The iPad preview renders at
+1200 x 1600, the portrait resolution Apple accepts for iPad previews.
 
 ## Design
 

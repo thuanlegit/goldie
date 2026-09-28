@@ -1,7 +1,9 @@
 /**
  * Store asset specifications.
  * iOS: App Store Connect, developer.apple.com/help/app-store-connect/reference/
- *   screenshot-specifications | app-preview-specifications. Verified 2026-08-24.
+ *   screenshot-specifications | app-preview-specifications. Verified 2026-08-24
+ *   (iPhone), 2026-09-28 (iPad: 1668x2420 screenshots from the 11" display
+ *   table; 1200x1600 is the portrait resolution Apple accepts for iPad previews).
  * Android: Play Console help, "Add preview assets". Phone screenshots are
  *   PNG/JPEG, 16:9 or 9:16, each side 320-3840px for promotional eligibility.
  *   Play accepts no video uploads: the promo video is a YouTube link, so the
@@ -9,15 +11,14 @@
  *   themselves, with no store constraints enforced.
  */
 
-export type DeviceKey = "iphone-6.9" | "pixel-10-pro";
-
+export type DeviceKey = "iphone-6.9" | "ipad-11" | "pixel-10-pro";
 export type DeviceSpec = {
   /**
    * Display label for the studio and logs. Output paths use the DeviceKey,
    * so raw/, screenshots/ and previews/ all share one naming scheme.
    */
   label: string;
-  platform: "ios" | "android";
+  platform: "ios" | "ipad" | "android";
   /**
    * `xcrun simctl` device type name; the toolkit picks the newest runtime that
    * has it. iOS only - android resolves a running emulator's adb serial instead.
@@ -55,6 +56,17 @@ export const DEVICES: Record<DeviceKey, DeviceSpec> = {
     native: { width: 1320, height: 2868 },
     screenshot: { width: 1320, height: 2868 },
     preview: { width: 886, height: 1920 },
+  },
+  // The iPad composes screen-only: goldie bundles no iPad bezel art (the
+  // config's `frame` is iPhone art), so the bare capture gets the drop
+  // shadow, clipped to the screen radius (src/frame.ts).
+  "ipad-11": {
+    label: "11",
+    platform: "ipad",
+    simulatorName: "iPad Pro 11-inch (M4)",
+    native: { width: 1668, height: 2420 },
+    screenshot: { width: 1668, height: 2420 },
+    preview: { width: 1200, height: 1600 },
   },
   // Framed with the bundled Pixel 10 Pro art (src/frame.ts), not the config's
   // frame variant, which is iPhone art with iPhone geometry. The Pixel 9 Pro

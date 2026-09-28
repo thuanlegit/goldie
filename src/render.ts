@@ -54,11 +54,12 @@ export async function renderScreenshots(cfg: LoadedConfig, deviceKey: DeviceKey,
     if (name.endsWith(".png")) await rm(join(outDir, name), { force: true });
   }
   // Each device brings its own bezel art and geometry: the config's frame on
-  // iOS, the bundled (or config-supplied) Pixel art on android. A device spec
-  // can force screen-only rendering, which drops the bezel entirely.
+  // iOS, the bundled (or config-supplied) Pixel art on android, and none at
+  // all on the iPad, which composes screen-only. A device spec can force
+  // screen-only rendering, which drops the bezel entirely.
   const { image, geom } = deviceFrame(cfg, deviceKey);
-  const screenOnly = Boolean(cfg.theme.screenOnly || spec.screenOnly);
-  const bezel = screenOnly ? null : await loadImage(image);
+  const screenOnly = Boolean(cfg.theme.screenOnly || spec.screenOnly || !image);
+  const bezel = screenOnly || !image ? null : await loadImage(image);
   registerFonts();
 
   const tile = spec.screenshot;
@@ -493,7 +494,10 @@ export async function renderPreview(cfg: LoadedConfig, deviceKey: DeviceKey, loc
 
   const seconds = clips.reduce((s, c) => s + c.durationSeconds, 0);
   // The 15-30s window is Apple's upload rule; a YouTube video has no bounds.
-  if (spec.platform === "ios" && (seconds < PREVIEW.minSeconds || seconds > PREVIEW.maxSeconds)) {
+  if (
+    spec.platform !== "android" &&
+    (seconds < PREVIEW.minSeconds || seconds > PREVIEW.maxSeconds)
+  ) {
     throw new Error(
       `Preview is ${seconds.toFixed(1)}s; Apple requires ${PREVIEW.minSeconds}-${PREVIEW.maxSeconds}s. ` +
         `Adjust the segment flows or their holdSeconds and re-capture.`,
@@ -608,7 +612,7 @@ export async function verify(
 
     // Duration and file-size bounds are Apple upload rules; the android video
     // goes to YouTube, so only the pipeline's own output is checked there.
-    const appleBounds = spec.platform === "ios";
+    const appleBounds = spec.platform !== "android";
     const checks: Array<[string, boolean, string]> = [
       [
         "size",
